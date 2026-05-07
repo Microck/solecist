@@ -7,7 +7,9 @@
   <img src="https://img.shields.io/badge/license-private-000000?style=flat-square" alt="license badge">
 </p>
 
-<img width="auto" height="225" alt="example" src="https://github.com/user-attachments/assets/f44d3ba9-b9ad-46da-a09b-23e7c809a908" />
+<p align="center">
+  <img height="225" alt="example" src="https://github.com/user-attachments/assets/f44d3ba9-b9ad-46da-a09b-23e7c809a908">
+</p>
 
 ---
 
