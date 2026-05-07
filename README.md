@@ -35,6 +35,67 @@ debates often drift because bad reasoning is easier to miss than bad facts. a fa
 - works with nvidia nim, ollama, lm studio, vllm, and other openai-compatible endpoints
 - caches debate classification per channel and backs off after provider failures
 
+## architecture
+
+`solecist` is a small event-driven bot. discord events enter through `discord.js`, runtime decisions live in `FallacyEngine`, model calls go through one openai-compatible adapter, and sqlite keeps the server configuration plus debate memory.
+
+```mermaid
+flowchart LR
+  admin["discord admin"] -->|slash commands| commands["/solecist commands"]
+  debater["debate channel message"] -->|messageCreate| discord["discord.js client"]
+
+  subgraph bot["solecist runtime"]
+    commands --> config["guild and channel config"]
+    discord --> engine["FallacyEngine"]
+    engine --> gates{"should analyze?"}
+    gates -->|no| quiet["stay quiet"]
+    gates -->|yes| debate["debate classifier cache"]
+    debate --> summary["discussion summary"]
+    summary --> assessment["fallacy assessment"]
+    assessment --> guard{"public reply allowed?"}
+    guard -->|no| eventOnly["record event only"]
+    guard -->|yes| reply["reply embed with feedback buttons"]
+  end
+
+  subgraph storage["sqlite storage"]
+    configStore[("guild_config and channel_config")]
+    rawStore[("raw_message")]
+    summaryStore[("discussion_state")]
+    eventStore[("fallacy_event and feedback")]
+  end
+
+  subgraph provider["openai-compatible model endpoint"]
+    smallModel["small model"]
+    mainModel["fallacy model"]
+  end
+
+  config --> configStore
+  engine --> rawStore
+  engine --> configStore
+  debate -->|classify recent messages| smallModel
+  summary -->|summarize context| smallModel
+  assessment -->|assess exact claim| mainModel
+  summary --> summaryStore
+  eventOnly --> eventStore
+  reply --> eventStore
+  reply -->|message.reply| debater
+  reply -->|admin feedback| eventStore
+
+  classDef external fill:#f8fafc,stroke:#64748b,color:#0f172a
+  classDef runtime fill:#ecfeff,stroke:#0891b2,color:#164e63
+  classDef decision fill:#fff7ed,stroke:#c2410c,color:#7c2d12
+  classDef store fill:#eef2ff,stroke:#4338ca,color:#312e81
+  classDef model fill:#f0fdf4,stroke:#15803d,color:#14532d
+  classDef muted fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d
+
+  class admin,debater external
+  class commands,discord,engine,config,debate,summary,assessment,reply runtime
+  class gates,guard decision
+  class configStore,rawStore,summaryStore,eventStore store
+  class smallModel,mainModel model
+  class quiet,eventOnly muted
+```
+
 ## commands
 
 all commands live under `/solecist` and require discord administrator permissions.
