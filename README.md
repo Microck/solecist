@@ -7,6 +7,8 @@
   <img src="https://img.shields.io/badge/license-private-000000?style=flat-square" alt="license badge">
 </p>
 
+<img width="auto" height="225" alt="example" src="https://github.com/user-attachments/assets/f44d3ba9-b9ad-46da-a09b-23e7c809a908" />
+
 ---
 
 `solecist` is a discord bot that helps debates stay focused by calling out likely logical fallacies as they happen. it watches configured discussion channels, looks for argument-shaped messages, and replies with short, tentative notes when a claim appears to use weak reasoning.
