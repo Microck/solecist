@@ -85,6 +85,23 @@ describe('FallacyEngine', () => {
     expect(decision).toEqual({ kind: 'ignored', reason: 'not_argumentative_claim' });
   });
 
+  it('does not wake the LLM classifier for non-debate explanatory chatter', async () => {
+    const { engine, storage, llm } = setup(dirs);
+    storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
+    storage.setChannelMode('guild', 'channel', 'auto');
+    const messages = [
+      message('1', 'a', 'I pushed the notification update because the old copy was confusing.'),
+      message('2', 'b', 'Thanks, the source list in the README is enough for setup.'),
+      message('3', 'a', 'The evidence is in the logs from yesterday and the deployment notes.'),
+    ];
+
+    for (const item of messages) {
+      expect((await engine.handleMessage('guild', item)).kind).toBe('ignored');
+    }
+
+    expect(llm.classifyCount).toBe(0);
+  });
+
   it('reuses recent debate classification instead of calling the classifier for every message', async () => {
     const { engine, storage, llm } = setup(dirs);
     storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });

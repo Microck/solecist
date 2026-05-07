@@ -23,6 +23,26 @@ describe('debate detector', () => {
 
     expect(shouldWakeDebateClassifier(messages)).toBe(false);
   });
+
+  it('stays asleep for ordinary explanations that are not a rebuttal exchange', () => {
+    const messages = [
+      message('1', 'a', 'I pushed the new notification settings because the defaults were too noisy.'),
+      message('2', 'b', 'Thanks, the source list in the readme helped me understand the change.'),
+      message('3', 'a', 'The evidence is in the logs from yesterday and the deployment notes.'),
+    ];
+
+    expect(shouldWakeDebateClassifier(messages)).toBe(false);
+  });
+
+  it('does not count no inside unrelated words as disagreement', () => {
+    const messages = [
+      message('1', 'a', 'The notification copy was updated because users missed the previous message.'),
+      message('2', 'b', 'The announce channel source list is useful for onboarding.'),
+      message('3', 'a', 'I added another note because the first one was too short.'),
+    ];
+
+    expect(shouldWakeDebateClassifier(messages)).toBe(false);
+  });
 });
 
 describe('target claim filter', () => {
@@ -35,6 +55,11 @@ describe('target claim filter', () => {
   it('accepts concise claims with reasoning markers', () => {
     expect(isPotentialArgumentativeClaim('Porque todo el mundo lo está comprando.')).toBe(true);
     expect(isPotentialArgumentativeClaim('That is wrong because the source does not prove your claim.')).toBe(true);
+  });
+
+  it('rejects long non-argument status or planning messages', () => {
+    expect(isPotentialArgumentativeClaim('I pushed the notification update and will check the deployment logs later.')).toBe(false);
+    expect(isPotentialArgumentativeClaim('The source list is in the README for anyone setting up the project.')).toBe(false);
   });
 });
 
