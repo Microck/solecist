@@ -48,11 +48,11 @@ export class FallacyEngine {
       return { kind: 'ignored', reason: 'provider_backoff' };
     }
 
-    if (channelConfig.mode === 'auto' && !isPotentialArgumentativeClaim(message.content)) {
+    if (!isPotentialArgumentativeClaim(message.content)) {
       return { kind: 'ignored', reason: 'not_argumentative_claim' };
     }
 
-    if (channelConfig.mode === 'auto' && !shouldWakeDebateClassifier(recentMessages)) {
+    if (!shouldWakeDebateClassifier(recentMessages)) {
       return { kind: 'ignored', reason: 'heuristic_sleep' };
     }
 
@@ -71,11 +71,11 @@ export class FallacyEngine {
   private async analyzeMessage(
     sensitivity: 'conservative' | 'balanced' | 'active',
     language: 'en' | 'es',
-    channelMode: 'auto' | 'forced_on' | 'forced_off',
+    _channelMode: 'auto' | 'forced_on' | 'forced_off',
     message: DebateMessage,
     recentMessages: DebateMessage[],
   ): Promise<EngineDecision> {
-    if (channelMode === 'auto' && !(await this.isDebateWithCache(message.channelId, recentMessages, language))) {
+    if (!(await this.isDebateWithCache(message.channelId, recentMessages, language))) {
       return { kind: 'ignored', reason: 'not_debate' };
     }
 

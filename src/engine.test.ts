@@ -33,6 +33,7 @@ describe('FallacyEngine', () => {
     const { engine, storage } = setup(dirs);
     storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
     storage.setChannelMode('guild', 'channel', 'forced_on');
+    await seedDebateContext(engine);
 
     const decision = await engine.handleMessage(
       'guild',
@@ -46,6 +47,7 @@ describe('FallacyEngine', () => {
     const { engine, storage, llm } = setup(dirs);
     storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
     storage.setChannelMode('guild', 'channel', 'forced_on');
+    await seedDebateContext(engine);
     llm.assessment = {
       isFallacy: true,
       confidence: 0.99,
@@ -63,6 +65,7 @@ describe('FallacyEngine', () => {
     const { engine, storage } = setup(dirs);
     storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
     storage.setChannelMode('guild', 'channel', 'forced_on');
+    await seedDebateContext(engine);
     const target = message('1', 'a', 'You are clueless, so your argument is wrong.');
 
     expect((await engine.handleMessage('guild', target)).kind).toBe('post');
@@ -99,6 +102,16 @@ describe('FallacyEngine', () => {
       expect((await engine.handleMessage('guild', item)).kind).toBe('ignored');
     }
 
+    expect(llm.classifyCount).toBe(0);
+  });
+
+  it('does not let forced-on channels bypass debate detection', async () => {
+    const { engine, storage, llm } = setup(dirs);
+    storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
+    storage.setChannelMode('guild', 'channel', 'forced_on');
+    const decision = await engine.handleMessage('guild', message('1', 'a', 'tu puta madre'));
+
+    expect(decision.kind).toBe('ignored');
     expect(llm.classifyCount).toBe(0);
   });
 
@@ -229,6 +242,16 @@ function setup(dirs: string[]): { storage: Storage; llm: FakeLlm; engine: Fallac
   const storage = new Storage(join(dir, 'bot.sqlite'), 100 * 1024 * 1024);
   const llm = new FakeLlm();
   return { storage, llm, engine: new FallacyEngine(storage, llm) };
+}
+
+async function seedDebateContext(engine: FallacyEngine): Promise<void> {
+  const debateMessages = [
+    message('context-1', 'a', 'I think this policy is bad because it makes the problem worse.'),
+    message('context-2', 'b', 'No, that is wrong because the evidence points in the opposite direction.'),
+    message('context-3', 'a', 'Pero esa fuente no prueba lo que estas diciendo, entonces no sigue.'),
+  ];
+
+  for (const debateMessage of debateMessages) await engine.handleMessage('guild', debateMessage);
 }
 
 function message(id: string, authorId: string, content: string): DebateMessage {
