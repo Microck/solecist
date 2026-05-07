@@ -9,22 +9,23 @@
 
 ---
 
-`solecism` is a private-server discord bot that watches configured debate channels and calls out likely logical fallacies with short, tentative replies. it uses cheap local message-shape filters first, then an openai-compatible model endpoint only when a message looks like part of a real argument.
+`solecism` is a discord bot that helps debates stay focused by calling out likely logical fallacies as they happen. it watches configured discussion channels, looks for argument-shaped messages, and replies with short, tentative notes when a claim appears to use weak reasoning.
 
-the bot is a reasoning coach, not a moderator. it does not delete messages, punish users, fact-check claims, or decide who is right. when it speaks, it replies to the original message with a compact embed that names the possible fallacy, quotes the exact claim, and gives one short explanation.
+the point is not to win arguments for anyone. `solecism` is a reasoning coach, not a moderator: it does not delete messages, punish users, fact-check claims, or decide who is right. when it speaks, it replies to the original message with a compact embed that names the possible fallacy, quotes the exact claim, and gives one short explanation.
 
 ## why
 
-most debate bots either respond to every message or wait for explicit commands. both are awkward for normal discord chat. `solecism` sits between those modes: it only watches channels admins enable, ignores casual chatter, confirms debate-shaped context, and backs off when the model provider is slow or rate-limited.
+debates often drift because bad reasoning is easier to miss than bad facts. a false dilemma, popularity appeal, moving goalpost, or ad hominem can derail a thread without looking like obvious spam or abuse.
 
-that makes the first version useful for small servers where people want a live reasoning assistant without turning the channel into a moderation queue.
+`solecism` is built for that narrower job. it does not try to become an ai chat bot or moderation suite. it stays quiet during casual chat, waits for debate-shaped context, and only calls out a specific claim when it can quote the text it is criticizing.
 
 ## what it does
 
-- tracks only admin-configured text channels
+- calls out likely logical fallacies in admin-configured debate channels
 - ignores discord threads in v1
 - skips short reactions, links, simple questions, and non-argument-shaped messages
-- confirms debate context before assessing a target message
+- confirms debate context before assessing a target claim
+- requires an exact quote before posting a public callout
 - supports english or spanish reply language per server
 - stores config, raw context, summaries, events, and feedback in sqlite
 - works with nvidia nim, ollama, lm studio, vllm, and other openai-compatible endpoints
