@@ -132,6 +132,31 @@ describe('FallacyEngine', () => {
     expect(llm.classifyCount).toBe(1);
   });
 
+  it('allows only one automatic analysis at a time per channel', async () => {
+    const { engine, storage, llm } = setup(dirs);
+    storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
+    storage.setChannelMode('guild', 'channel', 'auto');
+    llm.assessmentDelayMs = 50;
+    const debateMessages = [
+      message('1', 'a', 'I think this policy is bad because it makes the problem worse.'),
+      message('2', 'b', 'No, that is wrong because the evidence points in the opposite direction.'),
+      message('3', 'a', 'Pero esa fuente no prueba lo que estas diciendo, entonces no sigue.'),
+    ];
+    for (const debateMessage of debateMessages) await engine.handleMessage('guild', debateMessage);
+
+    const first = engine.handleMessage(
+      'guild',
+      message('4', 'b', 'You are clueless, so that argument is wrong because the source does not support it at all.'),
+    );
+    const second = await engine.handleMessage(
+      'guild',
+      message('5', 'a', 'Your conclusion is false because the evidence is about a different policy.'),
+    );
+
+    expect(second).toEqual({ kind: 'ignored', reason: 'analysis_in_progress' });
+    expect((await first).kind).toBe('post');
+  });
+
   it('manual checks return no-fallacy assessments instead of going silent', async () => {
     const { engine, storage, llm } = setup(dirs);
     storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
@@ -151,6 +176,7 @@ describe('FallacyEngine', () => {
 
 class FakeLlm implements LlmClient {
   classifyCount = 0;
+  assessmentDelayMs = 0;
   failNextClassification = false;
 
   assessment: FallacyAssessment = {
@@ -171,6 +197,7 @@ class FakeLlm implements LlmClient {
   }
 
   async assessFallacy(_input: FallacyAssessmentInput): Promise<FallacyAssessment> {
+    if (this.assessmentDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, this.assessmentDelayMs));
     return this.assessment;
   }
 

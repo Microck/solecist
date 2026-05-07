@@ -13,6 +13,7 @@ export type EngineDecision =
   | { kind: 'post'; assessment: FallacyAssessment; eventId: number };
 
 interface ChannelRuntime {
+  analysisInProgress: boolean;
   debateCacheExpiresAt: number;
   isDebate: boolean;
   providerBackoffUntil: number;
@@ -55,7 +56,26 @@ export class FallacyEngine {
       return { kind: 'ignored', reason: 'heuristic_sleep' };
     }
 
-    if (channelConfig.mode === 'auto' && !(await this.isDebateWithCache(message.channelId, recentMessages, language))) {
+    if (runtime.analysisInProgress) {
+      return { kind: 'ignored', reason: 'analysis_in_progress' };
+    }
+
+    runtime.analysisInProgress = true;
+    try {
+      return await this.analyzeMessage(guildConfig.sensitivity, language, channelConfig.mode, message, recentMessages);
+    } finally {
+      runtime.analysisInProgress = false;
+    }
+  }
+
+  private async analyzeMessage(
+    sensitivity: 'conservative' | 'balanced' | 'active',
+    language: 'en' | 'es',
+    channelMode: 'auto' | 'forced_on' | 'forced_off',
+    message: DebateMessage,
+    recentMessages: DebateMessage[],
+  ): Promise<EngineDecision> {
+    if (channelMode === 'auto' && !(await this.isDebateWithCache(message.channelId, recentMessages, language))) {
       return { kind: 'ignored', reason: 'not_debate' };
     }
 
@@ -69,11 +89,11 @@ export class FallacyEngine {
         recentMessages: recentMessages.slice(-18),
         discussionSummary: summary,
         language,
-        sensitivity: guildConfig.sensitivity,
+        sensitivity,
       }),
     );
 
-    const reason = this.publicPostRejectionReason(message, assessment, guildConfig.sensitivity);
+    const reason = this.publicPostRejectionReason(message, assessment, sensitivity);
     if (reason) {
       this.storage.recordFallacyEvent({
         messageId: message.id,
@@ -187,6 +207,7 @@ export class FallacyEngine {
     if (existing) return existing;
 
     const created: ChannelRuntime = {
+      analysisInProgress: false,
       debateCacheExpiresAt: 0,
       isDebate: false,
       providerBackoffUntil: 0,

@@ -137,7 +137,7 @@ export class OpenAiCompatibleLlmClient implements LlmClient {
 
   private async chatJson(model: string, messages: ChatMessage[]): Promise<string> {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 10_000);
+    const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 45_000);
 
     try {
       const response = await fetch(`${this.options.baseUrl}/chat/completions`, {

@@ -1,6 +1,4 @@
-<div align="center">
-  <img src=".github/assets/solecism-logo.svg" alt="solecism logo" width="520">
-</div>
+<h1 align="center">solecism</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/node-24%2B-000000?style=flat-square" alt="node badge">
