@@ -85,6 +85,53 @@ describe('FallacyEngine', () => {
     expect(decision).toEqual({ kind: 'ignored', reason: 'not_argumentative_claim' });
   });
 
+  it('reuses recent debate classification instead of calling the classifier for every message', async () => {
+    const { engine, storage, llm } = setup(dirs);
+    storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
+    storage.setChannelMode('guild', 'channel', 'auto');
+    const debateMessages = [
+      message('1', 'a', 'I think this policy is bad because it makes the problem worse.'),
+      message('2', 'b', 'No, that is wrong because the evidence points in the opposite direction.'),
+      message('3', 'a', 'Pero esa fuente no prueba lo que estas diciendo, entonces no sigue.'),
+      message('4', 'b', 'That argument is wrong because the source does not support it at all.'),
+      message('5', 'a', 'Your conclusion is false because the evidence is about a different policy.'),
+    ];
+
+    for (const debateMessage of debateMessages) await engine.handleMessage('guild', debateMessage);
+
+    expect(llm.classifyCount).toBe(1);
+  });
+
+  it('backs off after provider failures instead of retrying on the next message', async () => {
+    const { engine, storage, llm } = setup(dirs);
+    storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
+    storage.setChannelMode('guild', 'channel', 'auto');
+    llm.failNextClassification = true;
+    const debateMessages = [
+      message('1', 'a', 'I think this policy is bad because it makes the problem worse.'),
+      message('2', 'b', 'No, that is wrong because the evidence points in the opposite direction.'),
+      message('3', 'a', 'Pero esa fuente no prueba lo que estas diciendo, entonces no sigue.'),
+    ];
+
+    await expect(engine.handleMessage('guild', debateMessages[0]!)).resolves.toEqual({
+      kind: 'ignored',
+      reason: 'heuristic_sleep',
+    });
+    await expect(engine.handleMessage('guild', debateMessages[1]!)).resolves.toEqual({
+      kind: 'ignored',
+      reason: 'heuristic_sleep',
+    });
+    await expect(engine.handleMessage('guild', debateMessages[2]!)).rejects.toThrow('provider failed');
+
+    const decision = await engine.handleMessage(
+      'guild',
+      message('4', 'b', 'That argument is wrong because the source does not support it at all.'),
+    );
+
+    expect(decision).toEqual({ kind: 'ignored', reason: 'provider_backoff' });
+    expect(llm.classifyCount).toBe(1);
+  });
+
   it('manual checks return no-fallacy assessments instead of going silent', async () => {
     const { engine, storage, llm } = setup(dirs);
     storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
@@ -103,6 +150,9 @@ describe('FallacyEngine', () => {
 });
 
 class FakeLlm implements LlmClient {
+  classifyCount = 0;
+  failNextClassification = false;
+
   assessment: FallacyAssessment = {
     isFallacy: true,
     confidence: 0.99,
@@ -112,6 +162,11 @@ class FakeLlm implements LlmClient {
   };
 
   async classifyDebate(_input: DebateClassificationInput): Promise<DebateClassification> {
+    this.classifyCount += 1;
+    if (this.failNextClassification) {
+      this.failNextClassification = false;
+      throw new Error('provider failed');
+    }
     return { isDebate: true, confidence: 0.99, topic: 'test debate' };
   }
 
