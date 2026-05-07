@@ -69,6 +69,22 @@ describe('FallacyEngine', () => {
     expect(await engine.handleMessage('guild', target)).toEqual({ kind: 'ignored', reason: 'exact_duplicate' });
   });
 
+  it('does not auto-assess casual reactions even when a channel is active', async () => {
+    const { engine, storage } = setup(dirs);
+    storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });
+    storage.setChannelMode('guild', 'channel', 'auto');
+    const debateMessages = [
+      message('1', 'a', 'I think this policy is bad because it makes the problem worse.'),
+      message('2', 'b', 'No, that is wrong because the evidence points in the opposite direction.'),
+      message('3', 'a', 'Pero esa fuente no prueba lo que estas diciendo, entonces no sigue.'),
+    ];
+    for (const debateMessage of debateMessages) await engine.handleMessage('guild', debateMessage);
+
+    const decision = await engine.handleMessage('guild', message('4', 'b', 'que loco tio'));
+
+    expect(decision).toEqual({ kind: 'ignored', reason: 'not_argumentative_claim' });
+  });
+
   it('manual checks return no-fallacy assessments instead of going silent', async () => {
     const { engine, storage, llm } = setup(dirs);
     storage.updateGuildConfig({ guildId: 'guild', language: 'en', sensitivity: 'active' });

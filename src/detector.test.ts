@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { containsExactQuote, isAssessmentStale, shouldWakeDebateClassifier } from './detector.js';
+import {
+  containsExactQuote,
+  isAssessmentStale,
+  isPotentialArgumentativeClaim,
+  shouldWakeDebateClassifier,
+} from './detector.js';
 import type { DebateMessage } from './domain.js';
 
 describe('debate detector', () => {
@@ -17,6 +22,19 @@ describe('debate detector', () => {
     const messages = [message('1', 'a', 'hello'), message('2', 'b', 'hey'), message('3', 'a', 'lol')];
 
     expect(shouldWakeDebateClassifier(messages)).toBe(false);
+  });
+});
+
+describe('target claim filter', () => {
+  it('rejects casual reactions that are not argumentative claims', () => {
+    expect(isPotentialArgumentativeClaim('que loco tio')).toBe(false);
+    expect(isPotentialArgumentativeClaim('Bueno perdon')).toBe(false);
+    expect(isPotentialArgumentativeClaim('es 1 cargo por cada foto?')).toBe(false);
+  });
+
+  it('accepts concise claims with reasoning markers', () => {
+    expect(isPotentialArgumentativeClaim('Porque todo el mundo lo está comprando.')).toBe(true);
+    expect(isPotentialArgumentativeClaim('That is wrong because the source does not prove your claim.')).toBe(true);
   });
 });
 

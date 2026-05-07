@@ -1,5 +1,10 @@
 import type { DebateMessage, FallacyAssessment, LlmClient } from './domain.js';
-import { containsExactQuote, isAssessmentStale, shouldWakeDebateClassifier } from './detector.js';
+import {
+  containsExactQuote,
+  isAssessmentStale,
+  isPotentialArgumentativeClaim,
+  shouldWakeDebateClassifier,
+} from './detector.js';
 import { thresholdFor } from './domain.js';
 import type { Storage } from './storage.js';
 
@@ -39,6 +44,10 @@ export class FallacyEngine {
 
     if (channelConfig.mode === 'auto' && !shouldWakeDebateClassifier(recentMessages)) {
       return { kind: 'ignored', reason: 'heuristic_sleep' };
+    }
+
+    if (channelConfig.mode === 'auto' && !isPotentialArgumentativeClaim(message.content)) {
+      return { kind: 'ignored', reason: 'not_argumentative_claim' };
     }
 
     const previousSummary = this.storage.getDiscussionSummary(message.channelId);
