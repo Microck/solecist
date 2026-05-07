@@ -20,7 +20,7 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 await registerCommands(config);
 await client.login(config.discordToken);
-console.log('Solecism is running.');
+console.log('Solecist is running.');
 
 function shutdown(signal: string): void {
   console.log(`Received ${signal}; shutting down.`);

@@ -207,7 +207,7 @@ class FakeLlm implements LlmClient {
 }
 
 function setup(dirs: string[]): { storage: Storage; llm: FakeLlm; engine: FallacyEngine } {
-  const dir = mkdtempSync(join(tmpdir(), 'solecism-'));
+  const dir = mkdtempSync(join(tmpdir(), 'solecist-'));
   dirs.push(dir);
   const storage = new Storage(join(dir, 'bot.sqlite'), 100 * 1024 * 1024);
   const llm = new FakeLlm();

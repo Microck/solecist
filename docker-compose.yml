@@ -1,5 +1,5 @@
 services:
-  solecism:
+  solecist:
     build: .
     env_file:
       - .env

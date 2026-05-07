@@ -66,7 +66,7 @@ export function createClient(storage: Storage, engine: FallacyEngine): Client {
         return;
       }
       if (!interaction.isChatInputCommand()) return;
-      if (interaction.commandName !== 'solecism') return;
+      if (interaction.commandName !== 'solecist') return;
       await handleCommand(storage, engine, interaction);
     } catch (error) {
       console.error('interaction failed', error);
@@ -83,8 +83,8 @@ export function createClient(storage: Storage, engine: FallacyEngine): Client {
 
 export async function registerCommands(config: AppConfig): Promise<void> {
   const command = new SlashCommandBuilder()
-    .setName('solecism')
-    .setDescription('Configure and inspect Solecism')
+    .setName('solecist')
+    .setDescription('Configure and inspect Solecist')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand((subcommand) =>
       subcommand
@@ -109,7 +109,7 @@ export async function registerCommands(config: AppConfig): Promise<void> {
             ),
         ),
     )
-    .addSubcommand((subcommand) => subcommand.setName('status').setDescription('Show current Solecism status'))
+    .addSubcommand((subcommand) => subcommand.setName('status').setDescription('Show current Solecist status'))
     .addSubcommand((subcommand) =>
       subcommand
         .setName('enable-channel')
@@ -124,7 +124,7 @@ export async function registerCommands(config: AppConfig): Promise<void> {
     )
     .addSubcommand((subcommand) => subcommand.setName('start').setDescription('Force tracking on in the current channel'))
     .addSubcommand((subcommand) => subcommand.setName('stop').setDescription('Force tracking off in the current channel'))
-    .addSubcommand((subcommand) => subcommand.setName('emergency-stop').setDescription('Disable Solecism server-wide'))
+    .addSubcommand((subcommand) => subcommand.setName('emergency-stop').setDescription('Disable Solecist server-wide'))
     .addSubcommand((subcommand) =>
       subcommand
         .setName('check')
@@ -147,7 +147,7 @@ async function handleCommand(
   engine: FallacyEngine,
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  if (!interaction.guildId) throw new Error('Solecism only works in servers.');
+  if (!interaction.guildId) throw new Error('Solecist only works in servers.');
   const subcommand = interaction.options.getSubcommand();
 
   if (subcommand === 'setup') {
@@ -184,19 +184,19 @@ async function handleCommand(
 
   if (subcommand === 'start') {
     storage.setChannelMode(interaction.guildId, interaction.channelId, 'forced_on');
-    await interaction.reply({ content: 'Forced Solecism tracking on in this channel.', ephemeral: true });
+    await interaction.reply({ content: 'Forced Solecist tracking on in this channel.', ephemeral: true });
     return;
   }
 
   if (subcommand === 'stop') {
     storage.setChannelMode(interaction.guildId, interaction.channelId, 'forced_off');
-    await interaction.reply({ content: 'Forced Solecism tracking off in this channel.', ephemeral: true });
+    await interaction.reply({ content: 'Forced Solecist tracking off in this channel.', ephemeral: true });
     return;
   }
 
   if (subcommand === 'emergency-stop') {
     storage.updateGuildConfig({ guildId: interaction.guildId, emergencyStopped: true });
-    await interaction.reply({ content: 'Solecism is stopped server-wide.', ephemeral: true });
+    await interaction.reply({ content: 'Solecist is stopped server-wide.', ephemeral: true });
     return;
   }
 
@@ -225,7 +225,7 @@ async function handleFeedbackButton(storage: Storage, interaction: Interaction &
   if (!interaction.isButton() || !interaction.guildId) return;
   const memberPermissions = interaction.memberPermissions;
   if (!memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: 'Only admins can record Solecism feedback.', ephemeral: true });
+    await interaction.reply({ content: 'Only admins can record Solecist feedback.', ephemeral: true });
     return;
   }
 
